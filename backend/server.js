@@ -22,23 +22,68 @@ app.get("/children", (req, res) => {
       if (err) {
         console.log("Error on GET /children !");
         console.error(err);
-        res.status(500).send("Sorry, we encountered an internal error.");
+        return res.status(500).send("Sorry, we encountered an internal error.");
       }
-      res.status(200).json(rows);
+      return res.status(200).json(rows);
     }
   );
 });
 
 app.post("/gifts", (req, res) => {
   const formData = req.body;
-
   db.query(`INSERT INTO gift SET ?`, formData, (err, rows) => {
     if (err) {
-      console.log("Error on GET / !");
+      console.log("Error on POST /gifts !");
       console.error(err);
-      res.status(500).send("Sorry, we encountered an internal error.");
+      return res.status(500).send("Sorry, we encountered an internal error.");
     }
-    res.status(200).json(rows);
+    return res.status(200).json(rows);
+  });
+});
+
+app.delete("/children/:id_child/gifts", (req, res) => {
+  db.query(
+    `DELETE FROM gift WHERE id_child=?`,
+    req.params.id_child,
+    (err, rows) => {
+      if (err) {
+        console.log("Error on DELETE /children/:id_child/gifts !");
+        console.error(err);
+        return res.status(500).send("Sorry, we encountered an internal error.");
+      }
+      return res.status(200).json(rows);
+    }
+  );
+});
+
+app.patch("/gifts/:id/begin", (req, res) => {
+  db.query(`SELECT id FROM elf WHERE id_gift IS NULL LIMIT 1`, (err, rows) => {
+    if (err) {
+      console.log("Error on PATCH /gifts/:id/begin !");
+      console.error(err);
+      return res.status(500).send("Sorry, we encountered an internal error.");
+    }
+    if (!rows[0]) {
+      return res.status(418).send("Sorry, no elf available...");
+    }
+    const elfId = rows[0].id;
+    db.query(
+      `UPDATE elf SET id_gift=? WHERE id=?`,
+      [req.params.id, elfId],
+      (errUpdate, rowsUpdate) => {
+        if (errUpdate) {
+          console.log("Error on PATCH /gifts/:id/begin !");
+          console.error(errUpdate);
+          return res
+            .status(500)
+            .send("Sorry, we encountered an internal error.");
+        }
+        return res.status(200).json({
+          id_gift: parseInt(req.params.id),
+          id_elf: elfId
+        });
+      }
+    );
   });
 });
 
